@@ -33,7 +33,7 @@ export default function HomePage() {
     <main className="w-full bg-gradient-to-b from-slate-50 via-brand-blue/10 to-indigo-100 min-h-screen">
       <div className="mx-auto max-w-5xl px-2 pb-20 pt-4 md:px-6 md:py-6">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Banco de Questões Mão</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Banco de Questões SBCJ</h1>
             <p className="mt-2 text-gray-600">Gerencie questões e temas do sistema</p>
           </div>
 

@@ -33,24 +33,24 @@ const sifonn = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'OrtoQBank - Preparação para TEOT | Banco de Questões de Ortopedia',
+  title: 'SBCJ - Banco de Questões | Banco de Questões de Ortopedia',
   description:
-    'OrtoQBank - Preparatório para o TEOT l Curso TEOT. 1° lugar TEOT. Conheça nossa plataforma e garanta sua aprovação na prova da SBOT! Feito por especialistas da USP.',
+    'SBCJ - Banco de Questões. Conheça nossa plataforma e garanta sua aprovação na prova da SBOT! Feito por especialistas da USP.',
   keywords:
-    'TEOT, ortopedia, questões, simulados, preparação, residência médica, ortopedista',
-  authors: [{ name: 'OrtoQBank' }],
+    'SBCJ, questões, simulados, preparação, residência médica, ortopedista',
+  authors: [{ name: 'SBCJ' }],
   openGraph: {
-    title: 'OrtoQBank - Preparação para TEOT',
+    title: 'SBCJ - Banco de Questões',
     description:
-      'OrtoQBank - Preparatório para o TEOT l Curso TEOT. 1° lugar TEOT. Conheça nossa plataforma e garanta sua aprovação na prova da SBOT! Feito por especialistas da USP.',
+      'SBCJ - Banco de Questões. Conheça nossa plataforma e garanta sua aprovação na prova da SBOT! Feito por especialistas da USP.',
     type: 'website',
     locale: 'pt_BR',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'OrtoQBank - Preparação para TEOT',
+    title: 'SBCJ - Banco de Questões',
     description:
-      'OrtoQBank - Preparatório para o TEOT l Curso TEOT. 1° lugar TEOT. Conheça nossa plataforma e garanta sua aprovação na prova da SBOT! Feito por especialistas da USP.',
+      'SBCJ - Banco de Questões. Conheça nossa plataforma e garanta sua aprovação na prova da SBOT! Feito por especialistas da USP.',
   },
   robots: {
     index: true,
