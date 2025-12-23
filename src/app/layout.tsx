@@ -1,5 +1,6 @@
 import './globals.css';
 
+import { ClerkProvider } from '@clerk/nextjs';
 import { GoogleTagManager } from '@next/third-parties/google';
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata } from 'next';
@@ -77,16 +78,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${sifonn.variable} antialiased`}
       >
-        <ErrorBoundary>
-          <ConvexClientProvider>
-            <NextTopLoader />
-            <Header />
-            {children}
-            <Analytics />
-            <Toaster />
-          </ConvexClientProvider>
-        </ErrorBoundary>
+        <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}>
+          <ErrorBoundary>
+            <ConvexClientProvider>
+              <NextTopLoader />
+              <Header />
+              {children}
+              <Analytics />
+              <Toaster />
+            </ConvexClientProvider>
+          </ErrorBoundary>
+        </ClerkProvider>
       </body>
-    </html>
+    </html >
   );
 }
