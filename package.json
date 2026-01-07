@@ -7,7 +7,7 @@
     "migrate-tiptap-content": "./scripts/migrate-content-to-string.js"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "seed": "convex run init",
     "build": "next build",
     "start": "next start",

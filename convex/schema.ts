@@ -48,5 +48,36 @@ export default defineSchema({
     .index('by_group', ['groupId'])
     .searchIndex('search_by_title', { searchField: 'title' })
     .searchIndex('search_by_code', { searchField: 'questionCode' }),
+    
+    users: defineTable({
+      clerkUserId: v.string(),
+      email: v.string(),
+      firstName: v.string(),
+      lastName: v.string(),
+      imageUrl: v.optional(v.string()),
+      onboardingCompleted: v.boolean(),
+      role: v.union(v.literal("user"), v.literal("admin")),
+      status: v.union(
+        v.literal("active"),
+        v.literal("inactive"),
+        v.literal("suspended"),
+      ),
+      hasActiveYearAccess: v.boolean(),
+      paid: v.boolean(),
+      paymentDate: v.optional(v.number()),
+      paymentId: v.optional(v.string()),
+      paymentStatus: v.union(
+        v.literal("pending"),
+        v.literal("completed"),
+        v.literal("failed"),
+        v.literal("refunded"),
+      ),
+      testeId: v.optional(v.string()),
+    })
+      .index("by_clerkUserId", ["clerkUserId"])
+      .index("by_email", ["email"])
+      .index("by_status", ["status"])
+      .index("by_hasActiveYearAccess", ["hasActiveYearAccess"]),
+  
 
 });

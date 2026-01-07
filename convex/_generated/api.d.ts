@@ -18,6 +18,8 @@ import type * as questions from "../questions.js";
 import type * as questionsAggregateSync from "../questionsAggregateSync.js";
 import type * as subthemes from "../subthemes.js";
 import type * as themes from "../themes.js";
+import type * as userAccess from "../userAccess.js";
+import type * as users from "../users.js";
 import type * as utils from "../utils.js";
 
 /**
@@ -34,6 +36,8 @@ declare const fullApi: ApiFromModules<{
   questionsAggregateSync: typeof questionsAggregateSync;
   subthemes: typeof subthemes;
   themes: typeof themes;
+  userAccess: typeof userAccess;
+  users: typeof users;
   utils: typeof utils;
 }>;
 export declare const api: FilterApi<
