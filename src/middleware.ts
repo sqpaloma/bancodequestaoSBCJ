@@ -1,15 +1,27 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
+const isProtectedRoute = createRouteMatcher([
+  "/admin(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
-    await auth.protect();
+  if (!isProtectedRoute(req)) {
+    return NextResponse.next();
   }
+
+  // AUTH ONLY - Check authentication first
+  await auth.protect();
+
+  // Role-based authorization is enforced in Server Components
+  // for /admin routes using requireAdminServer() utility
+  // This is more efficient than checking roles in middleware
+  // as it avoids additional Convex queries on every request
+
+  // NÃO checa acesso pago aqui
+  // Isso acontece no Convex / Server Components
+
+  return NextResponse.next();
 });
 
 export const config = {
