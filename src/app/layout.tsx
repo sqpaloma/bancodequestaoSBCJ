@@ -10,6 +10,7 @@ import NextTopLoader from 'nextjs-toploader';
 
 import ErrorBoundary from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
+import { requireAdminServer } from '@/lib/server-auth';
 
 import Header from './components/header';
 import ConvexClientProvider from './convex-client-provider';
@@ -66,12 +67,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+  await requireAdminServer();
   return (
     <html lang="pt-BR">
       {gtmId && <GoogleTagManager gtmId={gtmId} />}
