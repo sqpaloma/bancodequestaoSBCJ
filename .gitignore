@@ -54,3 +54,7 @@ node_modules/
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+/transformed/
+
+/snapshot_next*

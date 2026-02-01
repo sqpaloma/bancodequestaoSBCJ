@@ -3,39 +3,126 @@ import { v } from 'convex/values';
 
 export default defineSchema({
   themes: defineTable({
+    // Multi-tenancy
+    tenantId: v.optional(v.id('apps')), // Optional during migration, required after
     name: v.string(),
     prefix: v.optional(v.string()),
     displayOrder: v.optional(v.number()),
-  }).index('by_name', ['name']),
+    // Legacy ID for cross-deployment import (stores old _id as string)
+    legacyId: v.optional(v.string()),
+  })
+    .index('by_name', ['name'])
+    .index('by_tenant', ['tenantId'])
+    .index('by_tenant_and_name', ['tenantId', 'name'])
+    .index('by_legacy_id', ['legacyId']),
 
   subthemes: defineTable({
+    // Multi-tenancy
+    tenantId: v.optional(v.id('apps')),
     name: v.string(),
-    themeId: v.id('themes'),
+    themeId: v.optional(v.id('themes')),
     prefix: v.optional(v.string()),
-  }).index('by_theme', ['themeId']),
+    // Legacy IDs for cross-deployment import
+    legacyId: v.optional(v.string()),
+    legacyThemeId: v.optional(v.string()),
+  })
+    .index('by_theme', ['themeId'])
+    .index('by_tenant', ['tenantId'])
+    .index('by_tenant_and_theme', ['tenantId', 'themeId'])
+    .index('by_legacy_id', ['legacyId']),
 
   groups: defineTable({
+    // Multi-tenancy
+    tenantId: v.optional(v.id('apps')),
     name: v.string(),
-    subthemeId: v.id('subthemes'),
+    subthemeId: v.optional(v.id('subthemes')),
     prefix: v.optional(v.string()),
-  }).index('by_subtheme', ['subthemeId']),
+    // Legacy IDs for cross-deployment import
+    legacyId: v.optional(v.string()),
+    legacySubthemeId: v.optional(v.string()),
+  })
+    .index('by_subtheme', ['subthemeId'])
+    .index('by_tenant', ['tenantId'])
+    .index('by_tenant_and_subtheme', ['tenantId', 'subthemeId'])
+    .index('by_legacy_id', ['legacyId']),
 
+  // Question Content - Heavy content stored separately for performance
+  // Load this only when viewing/editing a question, not for lists
+  questionContent: defineTable({
+    questionId: v.optional(v.id('questions')),
+    questionTextString: v.string(), // Rich text JSON (heavy)
+    explanationTextString: v.string(), // Rich text JSON (heavy)
+    alternatives: v.array(v.string()), // Answer options
+    // Legacy fields (for migration - will be removed after migration complete)
+    questionText: v.optional(v.any()),
+    explanationText: v.optional(v.any()),
+    // Legacy IDs for cross-deployment import
+    legacyId: v.optional(v.string()),
+    legacyQuestionId: v.optional(v.string()),
+  })
+    .index('by_question', ['questionId'])
+    .index('by_legacy_id', ['legacyId']),
+
+  // Questions - Light metadata for lists, filtering, aggregates
   questions: defineTable({
+    // Multi-tenancy
+    tenantId: v.optional(v.id('apps')), // Optional during migration, required after
+
+    // Metadata (light)
     title: v.string(),
     normalizedTitle: v.string(),
     questionCode: v.optional(v.string()),
     orderedNumberId: v.optional(v.number()),
-    questionText: v.optional(v.any()),
-    explanationText: v.optional(v.any()),
-    questionTextString: v.string(),
-    explanationTextString: v.string(),
-    contentMigrated: v.optional(v.boolean()),
-    alternatives: v.array(v.string()),
-    correctAlternativeIndex: v.number(),
-    themeId: v.id('themes'),
+
+    // Legacy IDs for cross-deployment import
+    legacyId: v.optional(v.string()),
+    legacyThemeId: v.optional(v.string()),
+    legacySubthemeId: v.optional(v.string()),
+    legacyGroupId: v.optional(v.string()),
+
+    // Taxonomy IDs (for filtering/aggregates)
+    themeId: v.optional(v.id('themes')),
     subthemeId: v.optional(v.id('subthemes')),
     groupId: v.optional(v.id('groups')),
+
+    // DENORMALIZED: Taxonomy names (for display - no extra fetches needed)
+    themeName: v.optional(v.string()),
+    subthemeName: v.optional(v.string()),
+    groupName: v.optional(v.string()),
+
+    // Quiz essentials (keep in main table for quiz generation)
+    correctAlternativeIndex: v.number(),
+    alternativeCount: v.optional(v.number()), // Just the count, not full content
+
+    // Other metadata
+    authorId: v.optional(v.id('users')),
     isPublic: v.optional(v.boolean()),
+
+    // Migration tracking
+    contentMigrated: v.optional(v.boolean()), // True when content moved to questionContent table
+
+    // ==========================================================================
+    // DEPRECATED FIELDS - TO BE REMOVED AFTER MIGRATION
+    // ==========================================================================
+    // These fields are being migrated to the questionContent table.
+    //
+    // MIGRATION STATUS:
+    // 1. ✅ All READ operations now use questionContent table
+    // 2. ✅ All WRITE operations now write to questionContent table only
+    // 3. ⏳ Run removeHeavyContentFromQuestions migration to clear this data
+    // 4. ⏳ After migration completes, remove these field definitions
+    //
+    // TO COMPLETE MIGRATION:
+    // 1. Run: npx convex run migrations:runRemoveHeavyContentMigration
+    // 2. Verify all questions work correctly
+    // 3. Remove the deprecated field definitions below
+    // ==========================================================================
+    questionText: v.optional(v.any()), // DEPRECATED: Use questionContent.questionTextString
+    explanationText: v.optional(v.any()), // DEPRECATED: Use questionContent.explanationTextString
+    questionTextString: v.optional(v.string()), // DEPRECATED: Use questionContent.questionTextString
+    explanationTextString: v.optional(v.string()), // DEPRECATED: Use questionContent.explanationTextString
+    alternatives: v.optional(v.array(v.string())), // DEPRECATED: Use questionContent.alternatives
+
     // Legacy taxonomy fields (for migration cleanup only)
     TaxThemeId: v.optional(v.string()),
     TaxSubthemeId: v.optional(v.string()),
@@ -46,7 +133,12 @@ export default defineSchema({
     .index('by_theme', ['themeId'])
     .index('by_subtheme', ['subthemeId'])
     .index('by_group', ['groupId'])
+    // Tenant-first indexes for multi-tenancy
+    .index('by_tenant', ['tenantId'])
+    .index('by_tenant_and_theme', ['tenantId', 'themeId'])
+    .index('by_tenant_and_subtheme', ['tenantId', 'subthemeId'])
+    .index('by_tenant_and_group', ['tenantId', 'groupId'])
+    .index('by_legacy_id', ['legacyId'])
     .searchIndex('search_by_title', { searchField: 'title' })
     .searchIndex('search_by_code', { searchField: 'questionCode' }),
-
 });

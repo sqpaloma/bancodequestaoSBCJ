@@ -1,21 +1,21 @@
-import { paginationOptsValidator } from "convex/server";
-import { v } from "convex/values";
+import { paginationOptsValidator } from 'convex/server';
+import { v } from 'convex/values';
 
-import { api, internal } from "./_generated/api";
-import type { Doc } from "./_generated/dataModel";
+import { api, internal } from './_generated/api';
+import type { Doc } from './_generated/dataModel';
 import {
   // Keep these for defining the actual mutations/queries
   internalAction,
   internalMutation,
   mutation,
   query,
-} from "./_generated/server";
+} from './_generated/server';
 import {
   _internalDeleteQuestion,
   _internalInsertQuestion,
   _internalUpdateQuestion,
-} from "./questionsAggregateSync";
-import { validateNoBlobs } from "./utils";
+} from './questionsAggregateSync';
+import { validateNoBlobs } from './utils';
 
 // Question stats are now handled by aggregates and triggers
 
@@ -28,9 +28,9 @@ export const create = mutation({
     title: v.string(),
     alternatives: v.array(v.string()),
     correctAlternativeIndex: v.number(),
-    themeId: v.id("themes"),
-    subthemeId: v.optional(v.id("subthemes")),
-    groupId: v.optional(v.id("groups")),
+    themeId: v.id('themes'),
+    subthemeId: v.optional(v.id('subthemes')),
+    groupId: v.optional(v.id('groups')),
   },
   handler: async (ctx, args) => {
     // Validate JSON structure of string content
@@ -47,7 +47,7 @@ export const create = mutation({
       }
     } catch (error: any) {
       throw new Error(
-        "Invalid content format: " + (error.message || "Unknown error"),
+        'Invalid content format: ' + (error.message || 'Unknown error'),
       );
     }
 
@@ -69,13 +69,15 @@ export const list = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (context, arguments_) => {
     const questions = await context.db
-      .query("questions")
-      .order("desc")
+      .query('questions')
+      .order('desc')
       .paginate(arguments_.paginationOpts);
 
     // Only fetch themes for the current page of questions, not all themes
     const themes = await Promise.all(
-      questions.page.map((question) => context.db.get(question.themeId)),
+      questions.page.map(question =>
+        question.themeId ? context.db.get(question.themeId) : null,
+      ),
     );
 
     return {
@@ -89,14 +91,16 @@ export const list = query({
 });
 
 export const getById = query({
-  args: { id: v.id("questions") },
+  args: { id: v.id('questions') },
   handler: async (context, arguments_) => {
     const question = await context.db.get(arguments_.id);
     if (!question) {
-      throw new Error("Question not found");
+      throw new Error('Question not found');
     }
 
-    const theme = await context.db.get(question.themeId);
+    const theme = question.themeId
+      ? await context.db.get(question.themeId)
+      : null;
 
     const subtheme = question.subthemeId
       ? await context.db.get(question.subthemeId)
@@ -112,7 +116,7 @@ export const getById = query({
 
 export const update = mutation({
   args: {
-    id: v.id("questions"),
+    id: v.id('questions'),
     // Accept stringified content from frontend
     questionTextString: v.string(),
     explanationTextString: v.string(),
@@ -120,9 +124,9 @@ export const update = mutation({
     title: v.string(),
     alternatives: v.array(v.string()),
     correctAlternativeIndex: v.number(),
-    themeId: v.id("themes"),
-    subthemeId: v.optional(v.id("subthemes")),
-    groupId: v.optional(v.id("groups")),
+    themeId: v.id('themes'),
+    subthemeId: v.optional(v.id('subthemes')),
+    groupId: v.optional(v.id('groups')),
     isPublic: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
@@ -130,7 +134,7 @@ export const update = mutation({
     try {
       const questionTextObj = JSON.parse(args.questionTextString);
       const explanationTextObj = JSON.parse(args.explanationTextString);
-      console.log("questionTextObj", questionTextObj);
+      console.log('questionTextObj', questionTextObj);
 
       // Validate structure after parsing
       if (questionTextObj.content) {
@@ -141,7 +145,7 @@ export const update = mutation({
       }
     } catch (error: any) {
       throw new Error(
-        "Invalid content format: " + (error.message || "Unknown error"),
+        'Invalid content format: ' + (error.message || 'Unknown error'),
       );
     }
 
@@ -167,15 +171,15 @@ export const listAll = query({
   // WARNING: This query downloads the entire questions table and should be avoided in production
   // or with large datasets as it will consume significant bandwidth.
   // Consider using paginated queries (like 'list') or filtering server-side instead.
-  handler: async (context) => {
-    return await context.db.query("questions").collect();
+  handler: async context => {
+    return await context.db.query('questions').collect();
   },
 });
 
 export const getMany = query({
-  args: { ids: v.array(v.id("questions")) },
+  args: { ids: v.array(v.id('questions')) },
   handler: async (ctx, args) => {
-    const questions = await Promise.all(args.ids.map((id) => ctx.db.get(id)));
+    const questions = await Promise.all(args.ids.map(id => ctx.db.get(id)));
     return questions;
   },
 });
@@ -183,17 +187,16 @@ export const getMany = query({
 export const countQuestionsByMode = query({
   args: {
     questionMode: v.union(
-      v.literal("all"),
-      v.literal("unanswered"),
-      v.literal("incorrect"),
-      v.literal("bookmarked"),
+      v.literal('all'),
+      v.literal('unanswered'),
+      v.literal('incorrect'),
+      v.literal('bookmarked'),
     ),
   },
-  handler: async (ctx) => {
-    const totalQuestions = await ctx.db.query("questions").collect();
+  handler: async ctx => {
+    const totalQuestions = await ctx.db.query('questions').collect();
     const totalCount = totalQuestions.length;
 
-  
     // and none are tracked as answered/incorrect/bookmarked
     const result = {
       all: totalCount,
@@ -207,7 +210,7 @@ export const countQuestionsByMode = query({
 });
 
 export const deleteQuestion = mutation({
-  args: { id: v.id("questions") },
+  args: { id: v.id('questions') },
   handler: async (ctx, args) => {
     // Then delete the question itself using the helper function
     const success = await _internalDeleteQuestion(ctx, args.id);
@@ -221,7 +224,7 @@ export const searchByCode = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    if (!args.code || args.code.trim() === "") {
+    if (!args.code || args.code.trim() === '') {
       return [];
     }
 
@@ -233,16 +236,18 @@ export const searchByCode = query({
 
     // First search by code (since that's more specific)
     const codeResults = await ctx.db
-      .query("questions")
-      .withSearchIndex("search_by_code", (q) =>
-        q.search("questionCode", searchTerm),
+      .query('questions')
+      .withSearchIndex('search_by_code', q =>
+        q.search('questionCode', searchTerm),
       )
       .take(limit); // Use the limit parameter
 
     // If we have enough code results, just return those
     if (codeResults.length >= limit) {
       const themes = await Promise.all(
-        codeResults.map((question) => ctx.db.get(question.themeId)),
+        codeResults.map(question =>
+          question.themeId ? ctx.db.get(question.themeId) : null,
+        ),
       );
       return codeResults.map((question, index) => ({
         _id: question._id,
@@ -255,21 +260,23 @@ export const searchByCode = query({
 
     // If code search didn't return enough, search by title too
     const titleResults = await ctx.db
-      .query("questions")
-      .withSearchIndex("search_by_title", (q) => q.search("title", searchTerm))
+      .query('questions')
+      .withSearchIndex('search_by_title', q => q.search('title', searchTerm))
       .take(limit - codeResults.length);
 
     // Combine results, eliminating duplicates (code results take priority)
-    const seenIds = new Set(codeResults.map((q) => q._id.toString()));
+    const seenIds = new Set(codeResults.map(q => q._id.toString()));
     const combinedResults = [
       ...codeResults,
-      ...titleResults.filter((q) => !seenIds.has(q._id.toString())),
+      ...titleResults.filter(q => !seenIds.has(q._id.toString())),
     ];
 
     // If we have questions, fetch their themes
     if (combinedResults.length > 0) {
       const themes = await Promise.all(
-        combinedResults.map((question) => ctx.db.get(question.themeId)),
+        combinedResults.map(question =>
+          question.themeId ? ctx.db.get(question.themeId) : null,
+        ),
       );
 
       // Return minimal data to reduce bandwidth
@@ -293,7 +300,7 @@ export const searchByTitle = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    if (!args.title || args.title.trim() === "") {
+    if (!args.title || args.title.trim() === '') {
       return [];
     }
 
@@ -305,14 +312,16 @@ export const searchByTitle = query({
 
     // Use the search index for efficient text search
     const matchingQuestions = await ctx.db
-      .query("questions")
-      .withSearchIndex("search_by_title", (q) => q.search("title", searchTerm))
+      .query('questions')
+      .withSearchIndex('search_by_title', q => q.search('title', searchTerm))
       .take(limit);
 
     // If we have questions, fetch their themes
     if (matchingQuestions.length > 0) {
       const themes = await Promise.all(
-        matchingQuestions.map((question) => ctx.db.get(question.themeId)),
+        matchingQuestions.map(question =>
+          question.themeId ? ctx.db.get(question.themeId) : null,
+        ),
       );
 
       // Return minimal data to reduce bandwidth
@@ -335,25 +344,28 @@ export const getNextSequentialNumber = query({
   },
   handler: async (ctx, args) => {
     // Get all questions from the database
-    const allQuestions = await ctx.db.query("questions").collect();
+    const allQuestions = await ctx.db.query('questions').collect();
 
     // Filter to only include questions that actually start with the prefix
     // and extract the numeric suffix
     const numbers: number[] = [];
-    
+
     // Normalize the prefix for comparison (remove extra spaces, uppercase)
     const normalizedPrefix = args.codePrefix.trim().toUpperCase();
-    
+
     // Create regex that matches: PREFIX + optional space + digits
     // Examples: "TESTE001", "TESTE 001", "TRA 001", "TRA-FR 001"
-    const prefixRegex = new RegExp(`^${normalizedPrefix.replace(/[-]/g, '\\-')}\\s*(\\d+)$`, 'i');
+    const prefixRegex = new RegExp(
+      String.raw`^${normalizedPrefix}\s*(\d+)$`,
+      'i',
+    );
 
     for (const question of allQuestions) {
       if (question.questionCode) {
         const normalizedCode = question.questionCode.trim().toUpperCase();
         const match = normalizedCode.match(prefixRegex);
         if (match && match[1]) {
-          numbers.push(parseInt(match[1], 10));
+          numbers.push(Number.parseInt(match[1], 10));
         }
       }
     }
@@ -372,12 +384,12 @@ export const getNextSequentialNumber = query({
 // Mutation to renumber all questions with sequential codes
 export const renumberAllQuestions = mutation({
   args: {},
-  handler: async (ctx) => {
+  handler: async ctx => {
     // Get all questions
-    const allQuestions = await ctx.db.query("questions").order("asc").collect();
+    const allQuestions = await ctx.db.query('questions').order('asc').collect();
 
     // Group questions by their prefix (everything before the number)
-    const questionsByPrefix = new Map<string, Doc<"questions">[]>();
+    const questionsByPrefix = new Map<string, Doc<'questions'>[]>();
 
     for (const question of allQuestions) {
       if (question.questionCode) {
@@ -401,13 +413,13 @@ export const renumberAllQuestions = mutation({
       questions.sort((a, b) => a._creationTime - b._creationTime);
 
       // Assign sequential numbers
-      for (let i = 0; i < questions.length; i++) {
+      for (const [i, question] of questions.entries()) {
         const newNumber = (i + 1).toString().padStart(3, '0');
         const newCode = `${prefix} ${newNumber}`;
-        
+
         // Only update if the code is different
-        if (questions[i].questionCode !== newCode) {
-          await ctx.db.patch(questions[i]._id, {
+        if (question.questionCode !== newCode) {
+          await ctx.db.patch(question._id, {
             questionCode: newCode,
           });
           updatedCount++;
